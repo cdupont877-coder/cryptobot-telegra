@@ -83,8 +83,7 @@ def fetch_news_items():
             title = entry.title
             link = entry.link
             summary = getattr(entry, "summary", "")
-   items.append(f"{title}\n{summary}\n{link}")
-
+            items.append(f"{title}\n{summary}\n{link}")
     return items
 
 HOT_PROJECTS = [
@@ -94,14 +93,10 @@ HOT_PROJECTS = [
 ]
 
 def fallback_analysis(news_items, projects):
-    summary = "📝 *Résumé simple des actus* :
-"
+    summary = "📝 *Résumé simple des actus* :\n"
     for ni in news_items:
-        summary += f"• {ni.splitlines()[0]}
-"
-    analysis = "
-🚀 *Analyse projets* :
-"
+        summary += f"• {ni.splitlines()[0]}\n"
+    analysis = "\n🚀 *Analyse projets* :\n"
     for p in projects:
         hype = 7
         desc = p["description"].lower()
@@ -110,15 +105,10 @@ def fallback_analysis(news_items, projects):
                 hype += 1
         hype = min(hype, 10)
         analysis += (
-            f"*{p['name']}*
-"
-            f"Technologie: 8/10 - moderne.
-"
-            f"Opportunité: 8/10 - cas clair.
-"
-            f"Hype: {hype}/10 - mots-clés. ({p['description']})
-
-"
+            f"*{p['name']}*\n"
+            f"Technologie: 8/10 - moderne.\n"
+            f"Opportunité: 8/10 - cas clair.\n"
+            f"Hype: {hype}/10 - mots-clés. ({p['description']})\n\n"
         )
     return summary + analysis
 
@@ -128,9 +118,7 @@ async def start_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     cmds = ["/start", "/menu", "/help", "/news", "/projects", "/analyse", "/airdrops", "/price", "/alerts", "/portfolio", "/watchlist"]
-    await update.message.reply_text("Commandes disponibles:
-" + "
-".join(cmds))
+    await update.message.reply_text("Commandes disponibles:\n" + "\n".join(cmds))
 
 async def menu_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     kb = [
@@ -151,14 +139,10 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await q.answer()
     if data == "news":
         news = fetch_news_items()
-        text = "📰 *Actus Crypto :*
-" + "
-".join(f"• {n.splitlines()[0]}" for n in news)
+        text = "📰 *Actus Crypto :*\n" + "\n".join(f"• {n.splitlines()[0]}" for n in news)
         await q.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
     elif data == "projects":
-        text = "🚀 *Projets :*
-" + "
-".join(f"• *{p['name']}* – {p['description']}" for p in HOT_PROJECTS)
+        text = "🚀 *Projets :*\n" + "\n".join(f"• *{p['name']}* – {p['description']}" for p in HOT_PROJECTS)
         await q.edit_message_text(text, parse_mode=ParseMode.MARKDOWN)
     elif data == "analyse":
         await q.edit_message_text(fallback_analysis(fetch_news_items(), HOT_PROJECTS), parse_mode=ParseMode.MARKDOWN)
@@ -166,12 +150,9 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await q.edit_message_text("🎁 *Airdrops :* ZKSync, LayerZero, Aleo", parse_mode=ParseMode.MARKDOWN)
     elif data == "price":
         btc, eth, sol = get_price("BTC"), get_price("ETH"), get_price("SOL")
-        text = "💰 *Prix :*
-"
-        text += f"• BTC : {btc:.2f} €
-" if btc else ''
-        text += f"• ETH : {eth:.2f} €
-" if eth else ''
+        text = "💰 *Prix :*\n"
+        text += f"• BTC : {btc:.2f} €\n" if btc else ''
+        text += f"• ETH : {eth:.2f} €\n" if eth else ''
         text += f"• SOL : {sol:.2f} €"    if sol else ''
         await q.edit_message_text(text or "Erreur récupération prix.", parse_mode=ParseMode.MARKDOWN)
     elif data == "alerts":
@@ -179,8 +160,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await q.edit_message_text("Aucune alerte définie.")
         else:
             lines = [f"ID {a.get('id',i+1)}: {a['symbol']} {a['operator']} {a['price']}€" for i,a in enumerate(state["alerts"])]
-            await q.edit_message_text("
-".join(lines))
+            await q.edit_message_text("\n".join(lines))
     elif data == "portfolio":
         if not state["portfolio"]:
             await q.edit_message_text("Portefeuille vide.")
@@ -194,10 +174,8 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     pnl = (price - p["avg_price"]) / p["avg_price"] * 100
                     total += val
                     lines.append(f"{p['symbol']}: {p['quantity']}×{price:.2f}€ = {val:.2f}€ ({pnl:+.2f}%)")
-            lines.append(f"
-Total : {total:.2f}€")
-            await q.edit_message_text("
-".join(lines))
+            lines.append(f"\nTotal : {total:.2f}€")
+            await q.edit_message_text("\n".join(lines))
     elif data == "watchlist":
         if not state["watchlist"]:
             await q.edit_message_text("Watchlist vide.")
@@ -206,9 +184,7 @@ Total : {total:.2f}€")
             for s in state["watchlist"]:
                 pr = get_price(s)
                 out.append(f"{s}: {pr:.2f}€" if pr else f"{s}: indisponible")
-            await q.edit_message_text("🔍 Watchlist :
-" + "
-".join(out))
+            await q.edit_message_text("🔍 Watchlist :\n" + "\n".join(out))
 
 # === BACKGROUND JOBS ===
 async def check_alerts(app):
@@ -237,12 +213,9 @@ async def build_and_send_report(app):
 
     top = [n.splitlines()[0] for n in news[:3]]
     summary = [f"📈 *Synthèse – {now}*"] + [f"• {h}" for h in top]
-    await app.bot.send_message(chat_id=CHAT_ID, text="
-".join(summary), parse_mode=ParseMode.MARKDOWN)
+    await app.bot.send_message(chat_id=CHAT_ID, text="\n".join(summary), parse_mode=ParseMode.MARKDOWN)
 
-    details = "📰 *Actus détaillées* :
-" + "
-".join(f"• {n.splitlines()[0]}" for n in news)
+    details = "📰 *Actus détaillées* :\n" + "\n".join(f"• {n.splitlines()[0]}" for n in news)
     await app.bot.send_message(chat_id=CHAT_ID, text=details, parse_mode=ParseMode.MARKDOWN, reply_to_message_id=sent.message_id)
 
     # update last_prices
