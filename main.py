@@ -83,9 +83,8 @@ def fetch_news_items():
             title = entry.title
             link = entry.link
             summary = getattr(entry, "summary", "")
-            items.append(f"{title}
-{summary}
-{link}")
+   items.append(f"{title}\n{summary}\n{link}")
+
     return items
 
 HOT_PROJECTS = [
