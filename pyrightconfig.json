@@ -1,7 +1,0 @@
-{
-"reportModuleLevelImportNotAtTop": "none",
-"reportBareExcept": "none",
-"reportOptionalSubscript": "none",
-"reportGeneralTypeIssues": "none",
-"reportMissingTypeStubs": "none"
-}
