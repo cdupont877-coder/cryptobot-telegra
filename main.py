@@ -1,16 +1,22 @@
-# === Imports standard library ===
 import warnings
+warnings.filterwarnings(
+    "ignore",
+    category=UserWarning,
+    message=r"pkg_resources is deprecated as an API.*"
+)
+
 import os
 import json
 import logging
 import time
-from datetime import datetime, time as dt_time
-from pathlib import Path
-
-# === Imports third-party libraries ===
 import requests
 import feedparser
 import pytz
+import keep_alive  # Flask keep-alive server
+keep_alive.keep_alive()  # Lancement du keep-alive (ne pas dupliquer)
+
+from datetime import datetime, time as dt_time
+from pathlib import Path
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.constants import ParseMode
@@ -22,20 +28,8 @@ from telegram.ext import (
     JobQueue,
 )
 
-import keep_alive  # Module keep_alive perso, pour le serveur Flask
-
-# === Configuration warnings ===
-warnings.filterwarnings(
-    "ignore",
-    category=UserWarning,
-    message=r"pkg_resources is deprecated as an API.*"
-)
-
-# === Keep-alive server (pour replit/railway) ===
-keep_alive.keep_alive()
-
-# === CONFIGURATION ===
-TOKEN   = os.getenv("TOKEN")
+# === CONFIG ===
+TOKEN   = os.getenv("TOKEN")        # Place ta clé ici ou dans les variables d'environnement
 CHAT_ID = int(os.getenv("CHAT_ID", "0"))
 TIMEZONE = pytz.timezone("Europe/Paris")
 
@@ -46,7 +40,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# === STATE (sauvegarde locale) ===
+# === STATE ===
 STATE_PATH = Path("state.json")
 if STATE_PATH.exists():
     state = json.loads(STATE_PATH.read_text())
@@ -61,7 +55,7 @@ def save_state():
     STATE_PATH.write_text(json.dumps(state, indent=2))
 save_state()
 
-# === UTILITAIRES ===
+# === UTILITIES ===
 def get_price(symbol: str):
     mapping = {"BTC": "bitcoin", "ETH": "ethereum", "SOL": "solana"}
     key = symbol.upper()
@@ -180,7 +174,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     pnl = (price - p["avg_price"]) / p["avg_price"] * 100
                     total += val
                     lines.append(f"{p['symbol']}: {p['quantity']}×{price:.2f}€ = {val:.2f}€ ({pnl:+.2f}%)")
-            lines.append(f"\nTotal : {total:.2f}€")
+            lines.append(f\"\nTotal : {total:.2f}€\")
             await q.edit_message_text("\n".join(lines))
     elif data == "watchlist":
         if not state["watchlist"]:
@@ -192,7 +186,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 out.append(f"{s}: {pr:.2f}€" if pr else f"{s}: indisponible")
             await q.edit_message_text("🔍 Watchlist :\n" + "\n".join(out))
 
-# === TÂCHES EN ARRIÈRE-PLAN (BACKGROUND JOBS) ===
+# === BACKGROUND JOBS ===
 async def check_alerts(app):
     for a in state["alerts"]:
         cur = get_price(a["symbol"])
@@ -239,14 +233,14 @@ def main():
     app.add_handler(CallbackQueryHandler(button_handler))
     # Ajoute d'autres handlers ici si besoin
 
-    # scheduling (tâches répétées)
+    # scheduling
     jq: JobQueue = app.job_queue
     jq.run_repeating(lambda ctx: check_alerts(ctx.application), interval=300, first=10)
     for h in (6, 12, 20):
         jq.run_daily(lambda ctx: build_and_send_report(ctx.application),
                      time=dt_time(h,0,tzinfo=TIMEZONE))
 
-    # polling auto-reconnect (pas de reconnect_interval !)
+    # polling auto-reconnect (SANS reconnect_interval !)
     while True:
         try:
             logger.info("Démarrage du polling Telegram…")
@@ -258,4 +252,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
